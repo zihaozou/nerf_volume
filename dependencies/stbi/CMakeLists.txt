@@ -1,0 +1,1 @@
+add_library(stbi STATIC stbi_wrapper.cpp)
