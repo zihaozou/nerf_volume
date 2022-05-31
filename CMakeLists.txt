@@ -110,6 +110,9 @@ else()
 endif()
 list(APPEND CUDA_NVCC_FLAGS "--extended-lambda")
 list(APPEND CUDA_NVCC_FLAGS "--expt-relaxed-constexpr")
+list(APPEND CUDA_NVCC_FLAGS "-g")
+list(APPEND CUDA_NVCC_FLAGS "-O0")
+list(APPEND CUDA_NVCC_FLAGS "-G")
 
 
 ###############################################################################
