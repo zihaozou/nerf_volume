@@ -35,10 +35,7 @@ find_path(
     _CUDNN_INCLUDE_DIR cudnn.h
     PATHS
     ${CUDA_TOOLKIT_ROOT_DIR}/include
-    $ENV{CUDNN_PATH}/include
-    $ENV{CUDA_PATH}/include
-    ${CUDNN_PATH}/include
-    /usr/include)
+    NO_DEFAULT_PATH)
 
 find_library(
     _CUDNN_LIBRARY cudnn
@@ -46,17 +43,7 @@ find_library(
     ${CUDA_TOOLKIT_ROOT_DIR}/lib64
     ${CUDA_TOOLKIT_ROOT_DIR}/lib/x64
     ${CUDA_TOOLKIT_ROOT_DIR}/lib
-    $ENV{CUDNN_PATH}/lib64
-    $ENV{CUDNN_PATH}/lib/x64
-    $ENV{CUDNN_PATH}/lib
-    $ENV{CUDA_PATH}/lib64
-    $ENV{CUDA_PATH}/lib/x64
-    $ENV{CUDA_PATH}/lib
-    ${CUDNN_PATH}/lib64
-    ${CUDNN_PATH}/lib/x64
-    ${CUDNN_PATH}/lib
-    /usr/lib/x86_64-linux-gnu
-    /usr/lib)
+)
 
 if(_CUDNN_INCLUDE_DIR AND _CUDNN_LIBRARY)
 

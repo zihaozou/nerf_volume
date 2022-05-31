@@ -31,4 +31,13 @@ cudaTextureObject_t create3DTex(T *dataCPU, uint32_t XDim, uint32_t YDim, uint32
     CUDA_CHECK_THROW(cudaCreateTextureObject(&tex, &resDesc, &texDesc, nullptr));
     return tex;
 }
+
+void destory3DTex(cudaTextureObject_t tex)
+{
+    cudaResourceDesc resDesc;
+    cudaGetTextureObjectResourceDesc(&resDesc, tex);
+    cudaArray_t array = resDesc.res.array.array;
+    CUDA_CHECK_THROW(cudaFreeArray(array));
+    CUDA_CHECK_THROW(cudaDestroyTextureObject(tex));
+}
 NV_NAME_SPACE_END
