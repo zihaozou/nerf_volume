@@ -580,7 +580,7 @@ std::enable_if_t<std::is_same<__half, T>::value> mlp_fused_forward(
 	const uint32_t n_hidden_layers
 ) {
 	const uint32_t batch_size = input.cols();
-	const uint32_t in_width = input.rows();
+	const uint32_t in_width = input.rows(); // numfeatures
 
 	constexpr uint32_t SKEW = WIDTH % 16 == 0 ? 8 : 0; // <- always going to be 8 as we only support multiple-of-16 widths
 	constexpr uint32_t INPUT_SKEW = 8; // <- likewise with inputs
@@ -742,23 +742,43 @@ void FullyFusedMLP<T, WIDTH>::inference_mixed_precision_impl(cudaStream_t stream
 	}
 }
 
-template <typename T, int WIDTH>
-std::unique_ptr<Context> FullyFusedMLP<T, WIDTH>::forward_impl(cudaStream_t stream, const GPUMatrixDynamic<T>& input, GPUMatrixDynamic<T>* output, bool use_inference_params, bool prepare_input_gradients) {
+template <typename T, int WIDTH> // WIDTH:num of neurons in each layer
+std::unique_ptr<Context> FullyFusedMLP<T, WIDTH>::forward_impl(cudaStream_t stream, const GPUMatrixDynamic<T> &input, GPUMatrixDynamic<T> *output, bool use_inference_params, bool prepare_input_gradients)
+{
 	// Make sure our temporary buffers have the correct size for the given batch size
 	uint32_t batch_size = input.n();
-	auto forward = allocate_forward_buffers(stream, batch_size);
+	auto forward = allocate_forward_buffers(stream, batch_size); // forward contex包含了hidden layer的output
 
 	const WeightUsage weight_usage = use_inference_params ? WeightUsage::Inference : WeightUsage::Forward;
 
 	// ASSUMPTION: weight matrices & forward_tmp matrices are contiguous in memory
 	switch (m_activation) {
-		case Activation::None:        mlp_fused_forward<WIDTH, T, Activation::None, false>(       stream, m_output_activation, input_weight_matrix(weight_usage), input, forward->hidden.at(0), output, m_n_hidden_matmuls); break;
-		case Activation::Exponential: mlp_fused_forward<WIDTH, T, Activation::Exponential, false>(stream, m_output_activation, input_weight_matrix(weight_usage), input, forward->hidden.at(0), output, m_n_hidden_matmuls); break;
-		case Activation::Sigmoid:     mlp_fused_forward<WIDTH, T, Activation::Sigmoid, false>(    stream, m_output_activation, input_weight_matrix(weight_usage), input, forward->hidden.at(0), output, m_n_hidden_matmuls); break;
-		case Activation::ReLU:        mlp_fused_forward<WIDTH, T, Activation::ReLU, false>(       stream, m_output_activation, input_weight_matrix(weight_usage), input, forward->hidden.at(0), output, m_n_hidden_matmuls); break;
-		case Activation::Squareplus:  mlp_fused_forward<WIDTH, T, Activation::Squareplus, false>( stream, m_output_activation, input_weight_matrix(weight_usage), input, forward->hidden.at(0), output, m_n_hidden_matmuls); break;
-		case Activation::Softplus:    mlp_fused_forward<WIDTH, T, Activation::Softplus, false>(   stream, m_output_activation, input_weight_matrix(weight_usage), input, forward->hidden.at(0), output, m_n_hidden_matmuls); break;
-		default: throw std::runtime_error{"Unsupported activation."};
+	case Activation::None:
+		mlp_fused_forward<WIDTH, T, Activation::None, false>(stream /* stream*/,
+															 m_output_activation /* activation type*/,
+															 input_weight_matrix(weight_usage) /*使用的是那个weight matrix，在这个forward函数里就是forward matrix*/,
+															 input /*input*/,
+															 forward->hidden.at(0) /*hidden layer的开头，因为内存是contiguous的*/,
+															 output /*输出*/,
+															 m_n_hidden_matmuls /*hidden layer的数量*/);
+		break;
+	case Activation::Exponential:
+		mlp_fused_forward<WIDTH, T, Activation::Exponential, false>(stream, m_output_activation, input_weight_matrix(weight_usage), input, forward->hidden.at(0), output, m_n_hidden_matmuls);
+		break;
+	case Activation::Sigmoid:
+		mlp_fused_forward<WIDTH, T, Activation::Sigmoid, false>(stream, m_output_activation, input_weight_matrix(weight_usage), input, forward->hidden.at(0), output, m_n_hidden_matmuls);
+		break;
+	case Activation::ReLU:
+		mlp_fused_forward<WIDTH, T, Activation::ReLU, false>(stream, m_output_activation, input_weight_matrix(weight_usage), input, forward->hidden.at(0), output, m_n_hidden_matmuls);
+		break;
+	case Activation::Squareplus:
+		mlp_fused_forward<WIDTH, T, Activation::Squareplus, false>(stream, m_output_activation, input_weight_matrix(weight_usage), input, forward->hidden.at(0), output, m_n_hidden_matmuls);
+		break;
+	case Activation::Softplus:
+		mlp_fused_forward<WIDTH, T, Activation::Softplus, false>(stream, m_output_activation, input_weight_matrix(weight_usage), input, forward->hidden.at(0), output, m_n_hidden_matmuls);
+		break;
+	default:
+		throw std::runtime_error{"Unsupported activation."};
 	}
 
 	// If we have more than 16 output dimensions, these will be taken care of by CUTLASS rather than
@@ -896,12 +916,12 @@ std::unique_ptr<typename FullyFusedMLP<T, WIDTH>::ForwardContext> FullyFusedMLP<
 
 	// Use GPUMatrixBase::allocate_shared_memory to ensure the matrices occupy contiguous memory.
 	// (Needed in the fully-fused kernels.)
-	forward->hidden.resize(num_forward_activations());
+	forward->hidden.resize(num_forward_activations()); // hidden的activation output存在这里
 	for (uint32_t i = 0; i < num_forward_activations(); ++i) {
-		forward->hidden[i].set_size_unsafe(m_network_width, batch_size);
+		forward->hidden[i].set_size_unsafe(m_network_width, batch_size); //设置每个hidden的activation output的大小
 	}
 
-	forward->alloc = GPUMatrixBase::allocate_shared_memory(stream, forward->hidden);
+	forward->alloc = GPUMatrixBase::allocate_shared_memory(stream, forward->hidden); //将hidden layer的output内存存成一个共享内存
 
 	return forward;
 }
