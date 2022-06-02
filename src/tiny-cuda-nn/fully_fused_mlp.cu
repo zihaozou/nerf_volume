@@ -806,14 +806,14 @@ void FullyFusedMLP<T, WIDTH>::backward_impl(
 
 	// Use GPUMatrixBase::allocate_shared_memory to ensure the matrices occupy contiguous memory.
 	// (Needed in the fully-fused kernels.)
-	std::vector<GPUMatrix<T>> backward_tmp(num_forward_activations());
+	std::vector<GPUMatrix<T>> backward_tmp(num_forward_activations()); //存储backward linear层的结果
 	for (uint32_t i = 0; i < num_forward_activations(); ++i) {
 		backward_tmp[i].set_size_unsafe(m_network_width, batch_size);
 	}
 	auto backward_tmp_alloc = GPUMatrixBase::allocate_shared_memory(stream, backward_tmp);
 
 	// Compute transfer of output activation in-place... it's treated specially for performance reasons
-	GPUMatrixDynamic<T> backward_output_tmp;
+	GPUMatrixDynamic<T> backward_output_tmp; //存储output 的activation backward
 	if (m_output_activation != Activation::None) {
 		backward_output_tmp = {m_padded_output_width, batch_size, stream, dL_doutput.layout()};
 		activation_backward_output_gpu(stream, dL_doutput.n_elements(), m_output_activation, output.data(), dL_doutput.data(), backward_output_tmp.data());

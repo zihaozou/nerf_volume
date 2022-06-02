@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
     xyz.copy_from_host(xyz_host.data());
 
     const uint32_t batch_size = 1 << 16;
-    const uint32_t n_training_steps = 10000;
+    const uint32_t n_training_steps = 1000;
     const uint32_t n_input_dims = 3;  // 3-D MRI
     const uint32_t n_output_dims = 1; // single value
     tcnn::GPUMatrix<float> prediction(n_output_dims, n_coords_padded);
