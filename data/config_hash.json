@@ -1,14 +1,14 @@
 {
 	"loss": {
-		"otype": "RelativeL2"
+		"otype": "L2"
 	},
 	"optimizer": {
 		"otype": "Adam",
-		"learning_rate": 1e-2,
+		"learning_rate": 1e-3,
 		"beta1": 0.9,
-		"beta2": 0.99,
-		"epsilon": 1e-15,
-		"l2_reg": 1e-6
+		"beta2": 0.999,
+		"epsilon": 1e-8,
+		"relative_decay": 1e-8
 	},
 	"encoding": {
 		"otype": "HashGrid",
@@ -23,6 +23,6 @@
 		"activation": "ReLU",
 		"output_activation": "None",
 		"n_neurons": 64,
-		"n_hidden_layers": 2
+		"n_hidden_layers": 3
 	}
 }

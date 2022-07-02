@@ -24,9 +24,9 @@ cudaTextureObject_t create3DTex(T *dataCPU, uint32_t XDim, uint32_t YDim, uint32
     texDesc.addressMode[0] = cudaAddressModeClamp;
     texDesc.addressMode[1] = cudaAddressModeClamp;
     texDesc.addressMode[2] = cudaAddressModeClamp;
-    texDesc.filterMode = cudaFilterModeLinear;
+    texDesc.filterMode = cudaFilterModePoint;
     texDesc.readMode = cudaReadModeElementType;
-    texDesc.normalizedCoords = true;
+    texDesc.normalizedCoords = false;
     cudaTextureObject_t tex;
     CUDA_CHECK_THROW(cudaCreateTextureObject(&tex, &resDesc, &texDesc, nullptr));
     return tex;

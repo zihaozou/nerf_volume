@@ -240,3 +240,4 @@ cython_debug/
 *.code-workspace
 
 # End of https://www.toptal.com/developers/gitignore/api/c++,python,visualstudiocode,cmake
+data/2101_Hep3B_009-1-1.tiff

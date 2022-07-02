@@ -28,15 +28,14 @@ if (MSVC)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
 endif()
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-
 ###############################################################################
 # CUDA compiler setup
 ###############################################################################
 
-set(CMAKE_CUDA_STANDARD 14)
+set(CMAKE_CUDA_STANDARD 17)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 set(CMAKE_CUDA_EXTENSIONS OFF)
 set(CUDA_LINK_LIBRARIES_KEYWORD PUBLIC)
@@ -110,9 +109,18 @@ else()
 endif()
 list(APPEND CUDA_NVCC_FLAGS "--extended-lambda")
 list(APPEND CUDA_NVCC_FLAGS "--expt-relaxed-constexpr")
-list(APPEND CUDA_NVCC_FLAGS "-g")
-list(APPEND CUDA_NVCC_FLAGS "-O0")
-list(APPEND CUDA_NVCC_FLAGS "-G")
+list(APPEND CUDA_NVCC_FLAGS "-lafcuda")
+if (CMAKE_BUILD_TYPE MATCHES DEBUG)
+    message("debug mode")
+	list(APPEND CUDA_NVCC_FLAGS "-g")
+	list(APPEND CUDA_NVCC_FLAGS "-O0")
+	list(APPEND CUDA_NVCC_FLAGS "-G")
+else()
+	message("release mode")
+	list(APPEND CUDA_NVCC_FLAGS "-O3")
+endif()
+
+
 
 
 ###############################################################################
@@ -128,6 +136,9 @@ find_library(
 	${CUDA_TOOLKIT_ROOT_DIR}/lib64
 	${CUDA_TOOLKIT_ROOT_DIR}/lib
 )
+find_package(ArrayFire)
+find_package( OpenCV REQUIRED )
+include_directories( ${OpenCV_INCLUDE_DIRS} )
 include_directories("include")
 include_directories("dependencies")
 include_directories("dependencies/cutlass/include")
@@ -137,9 +148,9 @@ add_subdirectory("src/tiny-cuda-nn")
 add_subdirectory("src/nerf_volume")
 add_subdirectory("dependencies/stbi")
 add_subdirectory("dependencies/cutlass")
-add_executable(test1 test1.cu)
-target_link_libraries(test1 PUBLIC ${CUDA_LIBRARIES} stbi tiny-cuda-nn nerf_volume)
-target_compile_options(test1 PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:${CUDA_NVCC_FLAGS}>)
-add_executable(test2 test2.cu)
-target_link_libraries(test2 PUBLIC ${CUDA_LIBRARIES} stbi tiny-cuda-nn nerf_volume)
-target_compile_options(test2 PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:${CUDA_NVCC_FLAGS}>)
+add_executable(test test.cu)
+target_link_libraries(test PUBLIC ${CUDA_LIBRARIES} stbi tiny-cuda-nn nerf_volume)
+target_compile_options(test PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:${CUDA_NVCC_FLAGS}>)
+# add_executable(nerf-volume main.cu)
+# target_link_libraries(nerf-volume PUBLIC ${CUDA_LIBRARIES} stbi tiny-cuda-nn nerf_volume ArrayFire::af ArrayFire::afcuda ${OpenCV_LIBS})
+# target_compile_options(nerf-volume PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:${CUDA_NVCC_FLAGS}>)
